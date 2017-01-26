@@ -1,0 +1,21 @@
+{
+  "name": "Neighborhood Map Project",
+  "authors": [
+    "Bruno Gama Catao <brunogamacatao@gmail.com>"
+  ],
+  "description": "Udacity's Neighborhood Map Project",
+  "main": "js/main.js",
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "knockout": "^3.4.1",
+    "bootstrap": "^3.3.7"
+  }
+}

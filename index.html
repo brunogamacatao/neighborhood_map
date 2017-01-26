@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Neighborhood Map Project</title>
+  <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/darkly.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container-fluid main-content">
+    <div class="row">
+      <div class="col-sm-3 col-md-2 sidebar">
+        <hr/>
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Filter..." 
+                 data-bind="textInput: filter">
+          <span class="input-group-btn">
+            <button class="btn btn-secondary" type="button" 
+                 data-bind="click: filterPointsOfInterest">
+              <span class="glyphicon glyphicon-filter"></span>
+            </button>
+          </span>
+        </div>
+        <hr/>
+        <ul class="nav nav-sidebar" data-bind="foreach: pointsOfInterest">
+          <li><a href="#" data-bind="text: name"></a></li>
+        </ul>
+      </div>
+      <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="bower_components/knockout/dist/knockout.js"></script>
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="js/main.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTxQG4TxbzI9ueOIftlsiSmUVvJNyD2VQ&callback=initMap"></script>
+</body>
+</html>
