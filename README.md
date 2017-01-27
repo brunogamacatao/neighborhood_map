@@ -24,7 +24,7 @@ directory:
 
 This is the Neighborhood Map interface:
 
-HERE_COMES_THE_PICURE
+![Main Interface](https://raw.githubusercontent.com/brunogamacatao/neighborhood_map/master/screenshots/main.png "Main Interface")
 
 It is pretty intuitive. But, here comes some instructions:
 
@@ -36,7 +36,10 @@ It is pretty intuitive. But, here comes some instructions:
   - If you click on ony one of those pictures, it will be displayed larger, with
   a legend below it.
 
-HERE_COMES_ANOTHER_PICTURES
+![Pictures Gallery](https://github.com/brunogamacatao/neighborhood_map/blob/master/screenshots/gallery.png?raw=true "Pictures Gallery")
+
+![Picture Detail](https://github.com/brunogamacatao/neighborhood_map/blob/master/screenshots/detail.png?raw=true "Picture Detail")
+
 
 ## Disclaimer ##
 
