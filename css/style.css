@@ -49,3 +49,15 @@ html, body, .main-content, .main-content .row, .main {
   height: 100%;
   width: 100%;
 }
+
+/**
+ * Modals
+ */
+#galleryModal > .modal-dialog {
+  position: absolute;
+  right: 10px;
+}
+
+#pictureModalBody > .card > .card-img-top {
+  max-width: 550px;
+}

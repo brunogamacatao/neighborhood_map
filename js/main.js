@@ -1,70 +1,113 @@
-var pointsOfInterest = [
-  {
-    name: 'Picanha 200',
-    position: {lat: -7.2146246, lng: -35.8793719}
-  },
-  {
-    name: 'Tabua de Carne',
-    position: {lat: -7.2074555, lng: -35.8774411}
-  },
-  {
-    name: 'Villa Chopp',
-    position: {lat: -7.2126535, lng: -35.879384}
-  },
-  {
-    name: 'La Suissa',
-    position: {lat: -7.2214683, lng: -35.8868872}
-  },
-  {
-    name: 'Campina Grill',
-    position: {lat: -7.1999168, lng: -35.8791087}
-  },
-  {
-    name: 'Boi & Brasa',
-    position: {lat: -7.2164849, lng: -35.8807736}
-  },
-];
-
-var map = null;
-var markers = [];
-
-/*
- * This function will be loaded automatically when Google Maps api finished 
- * loading.
+/**
+ * This is the main script of the application. We are using RequireJS to 
+ * manage dependencies.
  */
-function initMap() {
-  var campinaGrande = {lat: -7.2146481, lng: -35.8703679};
 
-  map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 14,
-    center: campinaGrande
-  });
+// App's contants
+var GOOGLE_MAPS_KEY = 'AIzaSyDTxQG4TxbzI9ueOIftlsiSmUVvJNyD2VQ';
+var INSTRAGRAM_API = 'http://localhost:3000/api/';
 
-  for (var i = 0; i < pointsOfInterest.length; i++) {
-    markers[i] = new google.maps.Marker({
-      title: pointsOfInterest[i].name,
-      position: pointsOfInterest[i].position,
-      map: map,
+// The dependencies config. We tell where vendor dependencies are stored.
+requirejs.config({
+  shim : {
+    'bootstrap': { 'deps':['jquery'] }
+  },
+  paths: {
+    async: '../bower_components/requirejs-plugins/src/async',
+    knockout: '../bower_components/knockout/dist/knockout',
+    jquery: '../bower_components/jquery/dist/jquery.min',
+    bootstrap: '../bower_components/bootstrap/dist/js/bootstrap.min',
+    underscore: '../bower_components/underscore/underscore-min'
+  }
+});
+
+// A general error callback, in case of any dependency could not be loaded.
+// This callback should only be called if the Google Maps API is not available.
+requirejs.onError = function(error) {
+  if (error.toString().includes('googleapis')) {
+    document.getElementById('map').innerHTML='<h3>It was not possible to load '+
+      'the Google Maps API. Probably it was due to a connection problem. ' + 
+      'Please check your connection and try again.</h3>';
+  } else { // Maybe, it's another error, so display a generic error message
+    document.getElementById('map').innerHTML = "<h3>An error occurred while " + 
+      "trying to load some app's dependencies. Probably it's a connection " + 
+      "problem. Please, check your connection and try again.";
+  }
+};
+
+// The application itself starts here
+requirejs([
+  'bootstrap', 
+  'async!https://maps.googleapis.com/maps/api/js?key=' + GOOGLE_MAPS_KEY,
+  'jquery',
+  'map',
+  'model',
+  ], function(bootstrap, gmaps, $, Map, PointsOfInterestModel) {
+    // We instantiate a map and initialize it
+    var map = new Map();
+    map.init(); // The initialization must happen here, because, the GMap is 
+                // already loaded.
+
+    // Init the UI model and link it with the map
+    // The model is responsible for representing the UI state and changing it.
+    var model = new PointsOfInterestModel(map);
+
+    // An utility function called whenever a marker is selected
+    function selectMarker(markerData, marker) {
+      // We clean the picture gallery
+      model.setPictures([]);
+      model.setSelectedMarker(marker); // Set the selected marker
+
+      // We add a callback to unset the selected marker when the dialog is closed
+      $("#galleryModal").on("hidden.bs.modal", function () {
+        model.setSelectedMarker(null);
+      });
+
+      // This function is called if the image server could not be reached
+      function handleError() {
+        $('#galleryModal').modal('hide');
+        model.displayError('Could not connect to the pictures server. ' + 
+                           'Please check your connection and try again.');        
+      }
+
+      // Perform an AJAX request to retrieve the marker's images
+      $.ajax({
+        url: INSTRAGRAM_API + markerData.instagram,
+        dataType: 'json',
+        type: 'GET',
+        success: function(data) { // In case the server returned data
+          if (data.status === 'error') { // This data still can be an error
+            handleError(); // So, let's handle this error
+          } else { // If everything is fine
+            model.setPictures(data.items); // Let's display the pictures
+            // and add a click handler to those pictures
+            $('.thumbnail').click(function(el) {
+              var pictureIndex = parseInt($(this).children('img').attr('data-index'));
+              // If a picture is clicked, we display it larder, in another dialog
+              model.displayPicture(pictureIndex);
+              $('#pictureModal').modal('show');
+            });
+          }
+        },
+        error: handleError // Errors can happen
+      });
+
+      // Let's change the dialog's title
+      $('#galleryModalLabel').text(markerData.name);
+      // Display the gallery dialog
+      $('#galleryModal').modal('show');      
+    };
+
+    // Now that we have a pretty selectMarker function, let's call it when
+
+    // The user clicks on a marker
+    map.setMarkersClickListener(function(markerData, event, marker) {
+      selectMarker(markerData, marker);
+    });
+
+    // The user clicks on a point of interest (that list on the left side)
+    model.onClickOnPointsOfInterest(function(markerData, index) {
+      selectMarker(markerData, map.markers[index]);
     });
   }
-}
-
-function PointsOfInterestModel() {
-  this.pointsOfInterest = ko.observableArray(pointsOfInterest.slice());
-  this.filter = ko.observable("");
-
-  this.filterPointsOfInterest = function() {
-    this.pointsOfInterest.removeAll();
-
-    for (var i = 0; i < pointsOfInterest.length; i++) {
-      if (pointsOfInterest[i].name.toLowerCase().includes(this.filter().toLowerCase())) {
-        this.pointsOfInterest.push(pointsOfInterest[i]);
-        markers[i].setMap(map);
-      } else {
-        markers[i].setMap(null);
-      }
-    }
-  };
-}
-
-ko.applyBindings(new PointsOfInterestModel());
+);
