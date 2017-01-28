@@ -14,6 +14,7 @@ requirejs.config({
   },
   paths: {
     async: '../bower_components/requirejs-plugins/src/async',
+    async: '../bower_components/requirejs-plugins/src/async',
     knockout: '../bower_components/knockout/dist/knockout',
     jquery: '../bower_components/jquery/dist/jquery.min',
     bootstrap: '../bower_components/bootstrap/dist/js/bootstrap.min',
@@ -24,6 +25,8 @@ requirejs.config({
 // A general error callback, in case of any dependency could not be loaded.
 // This callback should only be called if the Google Maps API is not available.
 requirejs.onError = function(error) {
+  // This error manipulates the DOM directly, because this is called if the 
+  // dependencies could not be loaded (ie. not jQuery nor Knockout).
   if (error.toString().includes('googleapis')) {
     document.getElementById('map').innerHTML='<h3>It was not possible to load '+
       'the Google Maps API. Probably it was due to a connection problem. ' + 
@@ -53,14 +56,14 @@ requirejs([
     var model = new PointsOfInterestModel(map);
 
     // An utility function called whenever a marker is selected
-    function selectMarker(markerData, marker) {
+    function selectPointOfInterest(point) {
       // We clean the picture gallery
       model.setPictures([]);
-      model.setSelectedMarker(marker); // Set the selected marker
+      model.setSelectedPointOfInterest(point); // Set the selected pi
 
       // We add a callback to unset the selected marker when the dialog is closed
       $("#galleryModal").on("hidden.bs.modal", function () {
-        model.setSelectedMarker(null);
+        model.setSelectedPointOfInterest(null);
       });
 
       // This function is called if the image server could not be reached
@@ -72,7 +75,7 @@ requirejs([
 
       // Perform an AJAX request to retrieve the marker's images
       $.ajax({
-        url: INSTRAGRAM_API + markerData.instagram,
+        url: INSTRAGRAM_API + point.instagram,
         dataType: 'json',
         type: 'GET',
         success: function(data) { // In case the server returned data
@@ -80,34 +83,22 @@ requirejs([
             handleError(); // So, let's handle this error
           } else { // If everything is fine
             model.setPictures(data.items); // Let's display the pictures
-            // and add a click handler to those pictures
-            $('.thumbnail').click(function(el) {
-              var pictureIndex = parseInt($(this).children('img').attr('data-index'));
-              // If a picture is clicked, we display it larder, in another dialog
-              model.displayPicture(pictureIndex);
-              $('#pictureModal').modal('show');
-            });
           }
         },
         error: handleError // Errors can happen
       });
-
-      // Let's change the dialog's title
-      $('#galleryModalLabel').text(markerData.name);
-      // Display the gallery dialog
-      $('#galleryModal').modal('show');      
     };
 
     // Now that we have a pretty selectMarker function, let's call it when
 
     // The user clicks on a marker
-    map.setMarkersClickListener(function(markerData, event, marker) {
-      selectMarker(markerData, marker);
+    map.setMarkersClickListener(function(pointOfInterest) {
+      selectPointOfInterest(pointOfInterest);
     });
 
     // The user clicks on a point of interest (that list on the left side)
-    model.onClickOnPointsOfInterest(function(markerData, index) {
-      selectMarker(markerData, map.markers[index]);
+    model.onClickOnPointsOfInterest(function(pointOfInterest) {
+      selectPointOfInterest(pointOfInterest);
     });
   }
 );

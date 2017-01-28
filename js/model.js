@@ -10,6 +10,22 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
   // A workaround to access the correct this in nested click bindings
   var that = null;
 
+  // Defines a binding handler to show display modals based on an observable 
+  // value.
+  ko.bindingHandlers.showModal = {
+    init: function (element, valueAccessor) {},
+    update: function (element, valueAccessor) {
+      var value = valueAccessor();
+      if (ko.utils.unwrapObservable(value)) {
+        $(element).modal('show');
+        // this is to focus input field inside dialog
+        $('input', element).focus();
+      } else {
+        $(element).modal('hide');
+      }
+    }
+  };  
+
   /**
    * Constructor of the PointsOfInterestModel class.
    * An PointsOfInterestModel object contains the following attributes:
@@ -17,10 +33,10 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
    * - pointsOfInterest: an observable array of points of interest;
    * - filter: an observable string of the typed filter;
    * - pictures: an observable array of pictures;
-   * - selectedPictureUrl: an observable string of the selected picture URL;
-   * - selectedPictureCaption: an observable string of the selected picture caption;
+   * - selectedPicture.url: an observable string of the selected picture URL;
+   * - selectedPicture.caption: an observable string of the selected picture caption;
    * - errorMessage: an observable string of the error message;
-   * - selectedMarker: a reference to the selected marker.
+   * - selectedPointOfInterest: a reference to the selected point of interest.
    *
    * The observable values are very important, because they are double binded
    * with the view. Every change made to then at the view, are reflected in the
@@ -29,13 +45,18 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
   var PointsOfInterestModel = function(map) {
     that = this;
     this.map = map;
-    this.pointsOfInterest = ko.observableArray(data.pointsOfInterest.slice());
-    this.filter = ko.observable("");
+    this.filter = ko.observable('');
     this.pictures = ko.observableArray();
-    this.selectedPictureUrl = ko.observable("");
-    this.selectedPictureCaption = ko.observable("");
-    this.errorMessage = ko.observable("");
-    this.selectedMarker = null;
+    this.errorMessage = ko.observable('');
+    this.selectedPicture = {
+      url: ko.observable(''),
+      caption: ko.observable('')
+    };
+    this.selectedPointOfInterest = {
+      name: ko.observable('')
+    };
+
+    this.pointsOfInterest = ko.computed(this.filterPointsOfInterest.bind(this));
 
     ko.applyBindings(this);
   };
@@ -55,16 +76,23 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
    * points of interest displayed, both in the map and in the list.
    */
   PointsOfInterestModel.prototype.filterPointsOfInterest = function() {
-    this.pointsOfInterest.removeAll(); // Remove all the points from the list
-
-    _.each(data.pointsOfInterest, function(pi, i) {
-      if (containsIgnoreCase(pi.name, this.filter())) { // If the names match
-        this.pointsOfInterest.push(pi); // Add the point to the list
-        this.map.showMarker(i); // Display the marker
-      } else { // if the names does not match
-        this.map.hideMarker(i); // Hide the marker
-      }
-    }.bind(this));
+    // If the filter is empty
+    if (!this.filter()) {
+      // Show all markers
+      _.each(_.range(this.map.markers.length), this.map.showMarker.bind(this.map));
+      // Return all the points of interests array
+      return data.pointsOfInterest;
+    } else {
+      return ko.utils.arrayFilter(data.pointsOfInterest, function(point, i) {
+        if (containsIgnoreCase(point.name, this.filter())) {
+          this.map.showMarker(i); // Display the marker
+          return true;
+        } else {
+          this.map.hideMarker(i); // Hide the marker
+          return false;
+        }
+      }.bind(this));
+    }
   };
 
   /**
@@ -94,19 +122,11 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
 
   /**
    * This method is called when a picture of the gallery if clicked.
-   * It will gather the information necessary to display the picture modal.
    */
-  PointsOfInterestModel.prototype.displayPicture = function(pictureIndex) {
-    // By the picture index, we could know it's row and column
-    var row = Math.floor(pictureIndex / GALLERY_COLS);
-    var col = pictureIndex % GALLERY_COLS;
-
-    // and, access the picture itself
-    var picture = this.pictures()[row].row[col];
-
+  PointsOfInterestModel.prototype.clickOnPicture = function(picture) {
     // sets the state so the picture dialog can show it
-    this.selectedPictureUrl(picture.images.standard_resolution.url);
-    this.selectedPictureCaption(picture.caption.text);
+    that.selectedPicture.url(picture.images.standard_resolution.url);
+    that.selectedPicture.caption(picture.caption.text);
   };
 
   /**
@@ -119,18 +139,21 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
 
   /**
    * This method sets the selected marker and animates it (a cool bouncing 
-   * animation). If there's a previously selected marker, it's animation is 
+   * animation). If there's a previously selected point, it's animation is 
    * stopped.
    */
-  PointsOfInterestModel.prototype.setSelectedMarker = function(marker) {
-    if (this.selectedMarker) {
-      this.selectedMarker.setAnimation(null);
+  PointsOfInterestModel.prototype.setSelectedPointOfInterest = function(point) {
+    if (this.selectedPointOfInterest.marker) {
+      this.selectedPointOfInterest.marker.setAnimation(null);
     }
 
-    this.selectedMarker = marker;
+    if (point) {
+      this.selectedPointOfInterest.name(point.name);
+      this.selectedPointOfInterest.marker = point.marker;
+    }
 
-    if (this.selectedMarker) {
-      this.selectedMarker.setAnimation(google.maps.Animation.BOUNCE);
+    if (this.selectedPointOfInterest.marker) {
+      this.selectedPointOfInterest.marker.setAnimation(google.maps.Animation.BOUNCE);
     }
   }
 

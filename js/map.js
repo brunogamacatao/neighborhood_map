@@ -30,12 +30,12 @@ define(['data', 'underscore'], function(data, _) {
     this.map = new google.maps.Map(document.getElementById('map'), MY_CITY);
 
     _.each(this.data.pointsOfInterest, function(pi) {
-      this.markers.push(new google.maps.Marker({
+      pi.marker = new google.maps.Marker({
         title: pi.name,
         position: pi.position,
         map: this.map,
         animation: google.maps.Animation.DROP
-      }));   
+      });   
     }.bind(this));
   };
 
@@ -44,7 +44,7 @@ define(['data', 'underscore'], function(data, _) {
    * @param index The marker index on the markers array.
    */
   Map.prototype.showMarker = function(index) {
-    this.markers[index].setMap(this.map);
+    this.data.pointsOfInterest[index].marker.setMap(this.map);
   };
 
   /**
@@ -52,7 +52,7 @@ define(['data', 'underscore'], function(data, _) {
    * @param index The marker index on the markers array.
    */
   Map.prototype.hideMarker = function(index) {
-    this.markers[index].setMap(null);
+    this.data.pointsOfInterest[index].marker.setMap(null);
   };
 
   /**
@@ -60,15 +60,14 @@ define(['data', 'underscore'], function(data, _) {
    * listener in enhanced to add the point of interest and maker itself as 
    * parameters.
    *
-   * The listener function signature should be: (pi, evt, marker), where:
+   * The listener function signature should be: (pi, evt), where:
    * pi - The point of intereset
    * evt - The click event
-   * marker - The clicked marker
    */
   Map.prototype.setMarkersClickListener = function(listener) {
-    _.each(this.markers, function(marker, i) {
-      marker.addListener('click', function(event) {
-        listener(this.data.pointsOfInterest[i], event, marker);
+    _.each(this.data.pointsOfInterest, function(pi) {
+      pi.marker.addListener('click', function(event) {
+        listener(pi, event);
       }.bind(this));
     }.bind(this));
   };
