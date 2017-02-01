@@ -9,9 +9,9 @@
   z-index: 1000;
   display: block;
   padding: 0 20px 0 20px;
-  overflow-x: hidden;
-  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-  border-right: 1px solid #eee;
+  overflow-x: visible;
+  overflow-y: visible;
+  height: 100px;
 }
 
 /* Sidebar navigation */
@@ -22,6 +22,11 @@
   background-color: #1A1A1A;
   max-width: 140px;
   margin-top: -6px;
+  visibility: hidden;
+}
+
+.nav-sidebar.visible {
+  visibility: visible;
 }
 
 @media screen and (min-width: 768px) {
@@ -29,6 +34,7 @@
     background-color: transparent;
     max-width: 100%;
     margin-top: 0;
+    visibility: visible;
   }
 }
 

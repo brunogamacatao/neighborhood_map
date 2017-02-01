@@ -5,7 +5,7 @@
 
 // This is my hometown
 var MY_CITY = {
-  center: {lat: -7.2146481, lng: -35.8703679},
+  center: {lat: -7.1985198, lng: -35.8817803},
   zoom: 14
 };
 

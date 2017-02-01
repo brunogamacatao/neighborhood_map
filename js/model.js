@@ -48,6 +48,7 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
     this.filter = ko.observable('');
     this.pictures = ko.observableArray();
     this.errorMessage = ko.observable('');
+    this.visibleDropDown = ko.observable(false);
     this.selectedPicture = {
       url: ko.observable(''),
       caption: ko.observable('')
@@ -76,23 +77,26 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
    * points of interest displayed, both in the map and in the list.
    */
   PointsOfInterestModel.prototype.filterPointsOfInterest = function() {
-    // If the filter is empty
+    // Filter the points of interest containig the typed string on their names
+    var filtered = ko.utils.arrayFilter(data.pointsOfInterest, function(point, i) {
+      if (containsIgnoreCase(point.name, this.filter())) {
+        this.map.showMarker(i); // Display the marker
+        return true;
+      } else {
+        this.map.hideMarker(i); // Hide the marker
+        return false;
+      }
+    }.bind(this));
+
+    // If nothing was typed, hide the drop down on smaller screens
     if (!this.filter()) {
-      // Show all markers
-      _.each(_.range(this.map.markers.length), this.map.showMarker.bind(this.map));
-      // Return all the points of interests array
-      return data.pointsOfInterest;
+      this.visibleDropDown(false);
     } else {
-      return ko.utils.arrayFilter(data.pointsOfInterest, function(point, i) {
-        if (containsIgnoreCase(point.name, this.filter())) {
-          this.map.showMarker(i); // Display the marker
-          return true;
-        } else {
-          this.map.hideMarker(i); // Hide the marker
-          return false;
-        }
-      }.bind(this));
+      // If there's a filter, display the drop down if there are results
+      this.visibleDropDown(filtered.length > 0);
     }
+
+    return filtered;
   };
 
   /**
@@ -148,6 +152,8 @@ define(['knockout', 'data', 'underscore', 'jquery'], function(ko, data, _, $) {
     }
 
     if (point) {
+      this.selectedPointOfInterest.name(''); // Forcing the change, even if the
+                                             // user selects the same pi.
       this.selectedPointOfInterest.name(point.name);
       this.selectedPointOfInterest.marker = point.marker;
     }

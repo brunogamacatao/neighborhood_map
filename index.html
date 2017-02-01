@@ -27,7 +27,8 @@
           </span>
         </div>
         <hr/>
-        <ul class="nav nav-sidebar" data-bind="foreach: pointsOfInterest">
+        <ul class="nav nav-sidebar" 
+            data-bind="foreach: pointsOfInterest, css: {visible: visibleDropDown()}">
           <li><a href="#" data-bind="text: name, click: $parent.clickOnPointsOfInterest"></a></li>
         </ul>
       </aside>
